@@ -114,7 +114,7 @@
     </div>
 
     <!-- CATALOG PAGE -->
-    <div v-show="viewMode === 'customer' && activePage === 'catalog'" class="page active" id="page-catalog">
+    <div :class="['page', { active: viewMode === 'customer' && activePage === 'catalog' }]" id="page-catalog">
       <div class="catalog-wrap">
         <div :class="['sidebar-overlay', { open: sidebarOpen }]" @click="closeSidebar"></div>
         <aside :class="['sidebar', { collapsed: sidebarCollapsed, 'open-mobile': sidebarOpen }]">
@@ -200,7 +200,7 @@
     </div>
 
     <!-- FAVORITES PAGE -->
-    <div v-show="viewMode === 'customer' && activePage === 'favs'" class="page" id="page-favs">
+    <div :class="['page', { active: viewMode === 'customer' && activePage === 'favs' }]" id="page-favs">
       <div class="catalog-main fav-main">
         <div class="page-header">
           <div class="page-title">♡ Favorites</div>
@@ -226,7 +226,7 @@
     </div>
 
     <!-- NEW ITEMS PAGE -->
-    <div v-show="viewMode === 'customer' && activePage === 'newItems'" class="page" id="page-new-items">
+    <div :class="['page', { active: viewMode === 'customer' && activePage === 'newItems' }]" id="page-new-items">
       <div class="catalog-main">
         <div class="page-header">
           <div class="page-title">✨ New Items</div>
@@ -250,7 +250,7 @@
     </div>
 
     <!-- ORDER HISTORY PAGE -->
-    <div v-show="viewMode === 'customer' && activePage === 'history'" class="page" id="page-history">
+    <div :class="['page', { active: viewMode === 'customer' && activePage === 'history' }]" id="page-history">
       <div class="history-main">
         <div class="history-header">
           <div class="page-title">Order History</div>
@@ -303,7 +303,7 @@
               <span class="sheet-tag">{{ selectedProduct.super }}</span>
               <span class="sheet-tag">{{ selectedProduct.cat }}</span>
             </div>
-            <div class="sheet-fav" @click="toggleFavorite(selectedProduct)">
+            <div class="sheet-fav" @click="console.log('💙 DEBUG: Product sheet heart clicked'); toggleFavorite(selectedProduct)">
               <span 
                 :class="['sheet-fav-icon', { faved: isFavorited(selectedProduct) }]"
               >
@@ -987,17 +987,31 @@ export default {
       this.cartOverlayOpen = false
     },
     async toggleFavorite(product) {
+      console.log('🔍 DEBUG: toggleFavorite called')
+      console.log('  Product:', product)
+      console.log('  Product ID:', product?.id)
+      console.log('  Product Name:', product?.name)
+      
       const token = localStorage.getItem('token')
+      console.log('  Token exists:', !!token)
+      
       if (!token) {
-        console.error('No auth token found')
+        console.error('❌ DEBUG: No auth token found')
+        this.showToast('❌ Please login first')
         return
       }
       
       const isFav = this.isFavorited(product)
+      console.log('  Is currently favorited:', isFav)
+      console.log('  Current favorites count:', this.favorites.length)
+      console.log('  Current favorites:', this.favorites.map(f => f.id))
       
       try {
         if (isFav) {
           // Remove from favorites
+          console.log('🗑️ DEBUG: Attempting to REMOVE from favorites')
+          console.log('  DELETE URL:', `/api/favorites/${product.id}`)
+          
           const res = await fetch(`/api/favorites/${product.id}`, {
             method: 'DELETE',
             headers: {
@@ -1005,14 +1019,30 @@ export default {
               'Content-Type': 'application/json'
             }
           })
+          
+          console.log('  Response status:', res.status)
+          console.log('  Response ok:', res.ok)
+          
           if (res.ok) {
             const idx = this.favorites.findIndex(f => f.id === product.id)
+            console.log('  Found at index:', idx)
             if (idx >= 0) {
               this.favorites.splice(idx, 1)
             }
+            console.log('✅ DEBUG: Successfully removed from favorites')
+            this.showToast('💔 Removed from favorites')
+          } else {
+            const error = await res.json().catch(() => ({}))
+            console.error('❌ DEBUG: Remove favorite failed')
+            console.error('  Error:', error)
+            this.showToast('❌ Failed to remove favorite')
           }
         } else {
           // Add to favorites
+          console.log('➕ DEBUG: Attempting to ADD to favorites')
+          console.log('  POST URL:', '/api/favorites')
+          console.log('  Body:', { product_id: product.id })
+          
           const res = await fetch('/api/favorites', {
             method: 'POST',
             headers: {
@@ -1021,19 +1051,40 @@ export default {
             },
             body: JSON.stringify({ product_id: product.id })
           })
+          
+          console.log('  Response status:', res.status)
+          console.log('  Response ok:', res.ok)
+          
           if (res.ok) {
             this.favorites.push(product)
+            console.log('✅ DEBUG: Successfully added to favorites')
+            console.log('  New favorites count:', this.favorites.length)
+            console.log('  Favorites array:', this.favorites)
+            console.log('  Product added:', product)
+            this.showToast('❤️ Added to favorites')
+          } else {
+            const error = await res.json().catch(() => ({}))
+            console.error('❌ DEBUG: Add favorite failed')
+            console.error('  Error:', error)
+            this.showToast('❌ Failed to add favorite')
           }
         }
       } catch (err) {
-        console.error('Toggle favorite error:', err)
+        console.error('❌ DEBUG: Toggle favorite error:', err)
+        console.error('  Error details:', err.message)
+        this.showToast('❌ Connection error')
       }
+      
+      console.log('🏁 DEBUG: toggleFavorite completed')
     },
     isFavorited(product) {
       return this.favorites.some(f => f.id === product.id)
     },
     async loadFavorites() {
       const token = localStorage.getItem('token')
+      console.log('📥 DEBUG: loadFavorites called')
+      console.log('  Token exists:', !!token)
+      
       if (!token) return
       
       try {
@@ -1044,12 +1095,19 @@ export default {
             'Content-Type': 'application/json'
           }
         })
+        
+        console.log('  Response status:', res.status)
+        console.log('  Response ok:', res.ok)
+        
         if (res.ok) {
           const data = await res.json()
+          console.log('  API Response:', data)
+          console.log('  Favorites received:', data.favorites?.length || 0)
           this.favorites = data.favorites || []
+          console.log('  Favorites array set to:', this.favorites)
         }
       } catch (err) {
-        console.error('Load favorites error:', err)
+        console.error('❌ Load favorites error:', err)
       }
     },
     addSelectedProduct() {
@@ -1220,6 +1278,10 @@ export default {
         } catch (e) { /* ignore parse error */ }
       }
       this.loadOrders()
+      // Load favorites if customer
+      if (role === 'customer') {
+        this.loadFavorites()
+      }
     }
     
     // Close dropdowns on click outside
@@ -1303,8 +1365,8 @@ body {
 }
 
 .burger {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -1692,6 +1754,7 @@ body {
   transition: color 0.15s;
   position: relative;
   padding: 8px 4px;
+  min-height: 60px;
 }
 
 .mnav-btn.active {
@@ -2123,7 +2186,7 @@ body {
 @media (max-width: 640px) {
   .fav-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 12px;
   }
 }
 
@@ -2389,8 +2452,8 @@ body {
 
 .qty-minus,
 .qty-plus {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 9px;
   border: 1px solid var(--border);
   background: var(--surface);
@@ -2568,7 +2631,9 @@ body {
   .nav-tabs,
   .nav-cust,
   .btn-logout,
-  .cart-btn {
+  .cart-btn,
+  .size-slider,
+  .view-mode-toggle {
     display: none !important;
   }
 
@@ -2608,11 +2673,31 @@ body {
   }
 
   .topnav {
-    padding: 0 12px;
+    padding: 0 8px;
+  }
+
+  .nav-left {
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nav-right {
+    gap: 6px;
+    flex-shrink: 0;
   }
 
   .brand-name {
-    font-size: 15px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand-logo {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
   }
 
   .catalog-main {
@@ -2641,15 +2726,53 @@ body {
   .cat-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px;
+    gap: 10px;
+    padding: 12px;
   }
 
   .cat-bar-title {
     font-size: 15px;
   }
 
+  .cat-bar-controls {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .view-toggle {
+    width: 100%;
+  }
+
+  .view-btn {
+    flex: 1;
+    padding: 10px 12px;
+    font-size: 13px;
+    min-height: 44px;
+  }
+
   .search-box {
     width: 100%;
+    min-height: 44px;
+  }
+
+  .acct-trigger {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+
+  .acct-name {
+    display: none;
+  }
+
+  .acct-chevron {
+    display: none;
+  }
+
+  .acct-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
 
   .products-grid {
@@ -2810,8 +2933,8 @@ body {
 }
 
 .acct-modal-close {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: none;
   background: var(--bg);

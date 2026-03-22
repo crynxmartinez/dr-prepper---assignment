@@ -52,3 +52,5 @@ coverage/
 # Misc
 .env.interview
 sandbox/
+
+/src/generated/prisma

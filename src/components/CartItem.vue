@@ -192,8 +192,8 @@ export default {
 }
 
 .qty-btn {
-  width: 20px;
-  height: 20px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: none;
   background: transparent;

@@ -895,7 +895,7 @@ export default {
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .be-price-input:focus {
@@ -908,7 +908,7 @@ export default {
   padding: 6px;
   border: 1px solid var(--border);
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 16px;
   background: white;
 }
 
@@ -1031,9 +1031,9 @@ export default {
   width: 100%;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 14px;
-  margin-bottom: 12px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
 }
 
 .be-modal-note {

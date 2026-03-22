@@ -2557,7 +2557,7 @@ export default {
   border-radius: 8px;
   color: var(--text);
   font-family: 'DM Sans', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   outline: none;
 }
 

@@ -529,7 +529,7 @@ export default {
   border: 1px solid var(--border, #e2ddd8);
   border-radius: 9px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text, #1a1a18);
   background: var(--bg, #f5f4f0);
   outline: none;

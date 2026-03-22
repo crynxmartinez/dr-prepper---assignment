@@ -293,13 +293,13 @@ export default {
 }
 
 .cart-close-btn {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--muted);
-  font-size: 14px;
+  font-size: 16px;
   cursor: pointer;
   transition: all 0.15s;
   display: flex;

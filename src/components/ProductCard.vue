@@ -65,6 +65,9 @@ export default {
   },
   methods: {
     toggleFavorite() {
+      console.log('💚 DEBUG: Product card heart clicked')
+      console.log('  Product:', this.product)
+      console.log('  Is favorited:', this.isFavorited)
       this.$emit('toggle-favorite', this.product)
     },
     startResize(e) {
@@ -157,11 +160,15 @@ export default {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 24px;
   transition: all 0.15s;
   line-height: 1;
-  padding: 2px;
-  display: block;
+  padding: 10px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .fav-btn:hover {
@@ -218,7 +225,7 @@ export default {
 .btn-view,
 .btn-cart {
   flex: 1;
-  padding: calc(6px * var(--card-scale, 1)) calc(8px * var(--card-scale, 1));
+  padding: calc(10px * var(--card-scale, 1)) calc(12px * var(--card-scale, 1));
   border: none;
   border-radius: 6px;
   font-size: calc(11px * var(--card-scale, 1));
@@ -227,6 +234,7 @@ export default {
   transition: all 0.2s;
   font-family: 'DM Sans', sans-serif;
   text-transform: capitalize;
+  min-height: 44px;
 }
 
 .btn-view {
@@ -293,13 +301,13 @@ export default {
 
 @media (max-width: 640px) {
   .product-card {
-    padding: 10px 8px 8px;
-    min-height: 350px;
+    padding: 12px 10px 10px;
+    min-height: auto;
   }
 
   .p-img-wrap {
-    height: 200px;
-    margin-bottom: 6px;
+    height: 180px;
+    margin-bottom: 8px;
     background: #fff;
     flex-shrink: 0;
   }
@@ -317,8 +325,9 @@ export default {
 
   .btn-view,
   .btn-cart {
-    font-size: 10px;
-    padding: 4px 6px;
+    font-size: 12px;
+    padding: 12px 8px;
+    min-height: 44px;
   }
 }
 </style>

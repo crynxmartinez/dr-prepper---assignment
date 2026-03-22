@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const pg = require('pg');
+const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
@@ -31,16 +32,25 @@ const app = express();
 // ========================
 // DATABASE SETUP
 // ========================
+// Prisma Client (for new code)
+const prisma = new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+});
+
+// Legacy pg Pool (for existing queries) - uses same DATABASE_URL as Prisma
 const pool = new pg.Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'drprepper_wholesale',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('db.prisma.io') ? { rejectUnauthorized: false } : false
 });
 
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
+});
+
+// Graceful shutdown
+process.on('beforeExit', async () => {
+  await prisma.$disconnect();
+  await pool.end();
 });
 
 // ========================
@@ -50,7 +60,16 @@ app.set('trust proxy', 1); // Trust Cloudflare Tunnel
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-app.use(express.static('public'));
+// Disable caching for HTML files so new builds load immediately
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  next();
+});
+app.use(express.static('public', { maxAge: 0 }));
 
 // Favicon route
 app.get('/favicon.ico', (req, res) => {
@@ -161,10 +180,6 @@ const loginRateLimiter = rateLimit({
   skipSuccessfulRequests: true,
   handler: (req, res) => {
     res.status(429).json({ error: 'Too many login attempts. Please try again in 15 minutes.' });
-  },
-  // Trust Cloudflare + handle missing X-Forwarded-For gracefully
-  keyGenerator: (req) => {
-    return req.ip || req.connection.remoteAddress || 'unknown';
   }
 });
 
@@ -537,13 +552,19 @@ app.post('/api/auth/reset-password', async (req, res) => {
     const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour
 
     const userId = user.rows[0].id;
-    const table = isAdmin ? 'users' : 'customers';
     
-    // Store reset token in database
-    await pool.query(
-      `UPDATE ${table} SET reset_token = $1, reset_token_expires = $2 WHERE id = $3`,
-      [resetToken, resetTokenExpires, userId]
-    );
+    // Store reset token in database (use separate queries to avoid SQL injection)
+    if (isAdmin) {
+      await pool.query(
+        'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
+        [resetToken, resetTokenExpires, userId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE customers SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
+        [resetToken, resetTokenExpires, userId]
+      );
+    }
 
     // Send email with reset link
     const resetLink = `${process.env.FRONTEND_URL || 'https://wholesale.drprepperusa.com'}/reset?token=${resetToken}`;
@@ -620,11 +641,18 @@ app.post('/api/auth/reset-password/confirm', async (req, res) => {
     // Hash new password
     const passwordHash = await bcrypt.hash(new_password, 12);
 
-    // Update password and clear reset tokens
-    await pool.query(
-      `UPDATE ${table} SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, password_changed_at = NOW() WHERE id = $2`,
-      [passwordHash, user.id]
-    );
+    // Update password and clear reset tokens (use separate queries to avoid SQL injection)
+    if (isAdmin) {
+      await pool.query(
+        'UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, password_changed_at = NOW() WHERE id = $2',
+        [passwordHash, user.id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE customers SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL, password_changed_at = NOW() WHERE id = $2',
+        [passwordHash, user.id]
+      );
+    }
 
     res.json({
       success: true,
@@ -1563,8 +1591,10 @@ app.get('/api/favorites', async (req, res) => {
     }
     
     const result = await pool.query(`
-      SELECT p.id, p.name, p.weight, p.bags_per_case, p.category_id, c.name as category,
-             p.super_category_id, s.name as super_category, p.image_url, p.sku
+      SELECT p.id, p.name, p.weight, p.bags_per_case, p.cases_per_pallet, p.price,
+             p.category_id, c.name as category,
+             p.super_category_id, s.name as super_category, p.image_url, p.sku,
+             p.sort_order, p.is_hidden, p.is_oos, p.show_price
       FROM favorites f
       JOIN products p ON f.product_id = p.id
       JOIN categories c ON p.category_id = c.id
@@ -2785,10 +2815,10 @@ app.get('/api/admin/logs/status', async (req, res) => {
     
     // Get logs by type in last 30 days
     const recentResult = await pool.query(
-      `SELECT action, COUNT(*) as count 
+      `SELECT type, COUNT(*) as count 
        FROM activity_log 
        WHERE created_at > NOW() - INTERVAL '30 days'
-       GROUP BY action
+       GROUP BY type
        ORDER BY count DESC`
     );
     

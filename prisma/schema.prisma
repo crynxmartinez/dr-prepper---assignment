@@ -1,0 +1,243 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SuperCategory {
+  id         Int        @id @default(autoincrement())
+  name       String     @unique @db.VarChar(255)
+  sortOrder  Int        @default(0) @map("sort_order")
+  
+  categories           Category[]
+  products             Product[]
+  customerCatHidden    CustomerCatHidden[]
+  
+  @@map("super_categories")
+}
+
+model Category {
+  id              Int           @id @default(autoincrement())
+  name            String        @db.VarChar(255)
+  superCategoryId Int           @map("super_category_id")
+  sortOrder       Int           @default(0) @map("sort_order")
+  isHidden        Boolean       @default(false) @map("is_hidden")
+  
+  superCategory   SuperCategory @relation(fields: [superCategoryId], references: [id], onDelete: Cascade)
+  products        Product[]
+  
+  @@index([isHidden])
+  @@map("categories")
+}
+
+model Product {
+  id               String    @id @db.VarChar(50)
+  name             String    @db.VarChar(255)
+  weight           String?   @db.VarChar(50)
+  bagsPerCase      String?   @map("bags_per_case") @db.VarChar(50)
+  casesPerPallet   Int       @default(60) @map("cases_per_pallet")
+  price            Decimal   @default(25.00) @db.Decimal(10, 2)
+  categoryId       Int       @map("category_id")
+  superCategoryId  Int       @map("super_category_id")
+  imageUrl         String?   @map("image_url") @db.VarChar(512)
+  sku              String?   @db.VarChar(100)
+  sortOrder        Int       @default(0) @map("sort_order")
+  isHidden         Boolean   @default(false) @map("is_hidden")
+  isOos            Boolean   @default(false) @map("is_oos")
+  showPrice        Boolean   @default(true) @map("show_price")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  
+  category         Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  superCategory    SuperCategory @relation(fields: [superCategoryId], references: [id], onDelete: Cascade)
+  
+  orderItems       OrderItem[]
+  favorites        Favorite[]
+  customerOverrides CustomerOverride[]
+  carts            Cart[]
+  
+  @@index([categoryId])
+  @@index([superCategoryId])
+  @@index([createdAt])
+  @@index([categoryId, isHidden])
+  @@map("products")
+}
+
+model User {
+  id                  String    @id @db.VarChar(50)
+  email               String    @unique @db.VarChar(255)
+  passwordHash        String    @map("password_hash") @db.VarChar(255)
+  role                String    @default("view-only") @db.VarChar(50)
+  active              Boolean   @default(true)
+  createdAt           DateTime  @default(now()) @map("created_at")
+  lastLogin           DateTime? @map("last_login")
+  resetToken          String?   @map("reset_token") @db.VarChar(255)
+  resetTokenExpires   DateTime? @map("reset_token_expires")
+  passwordChangedAt   DateTime? @map("password_changed_at")
+  
+  @@map("users")
+}
+
+model Customer {
+  id              String    @id @db.VarChar(50)
+  companyName     String    @map("company_name") @db.VarChar(255)
+  contactName     String?   @map("contact_name") @db.VarChar(255)
+  email           String    @unique @db.VarChar(255)
+  passwordHash    String    @map("password_hash") @db.VarChar(255)
+  phone           String?   @db.VarChar(20)
+  addressLine1    String?   @map("address_line1") @db.VarChar(255)
+  addressLine2    String?   @map("address_line2") @db.VarChar(255)
+  city            String?   @db.VarChar(100)
+  state           String?   @db.VarChar(50)
+  zip             String?   @db.VarChar(20)
+  country         String?   @db.VarChar(100)
+  viewPreset      String    @default("full") @map("view_preset") @db.VarChar(50)
+  active          Boolean   @default(true)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  lastLogin       DateTime? @map("last_login")
+  resetToken      String?   @map("reset_token") @db.VarChar(255)
+  resetTokenExpires DateTime? @map("reset_token_expires")
+  passwordChangedAt DateTime? @map("password_changed_at")
+  
+  orders          Order[]
+  favorites       Favorite[]
+  activityLog     ActivityLog[]
+  customerOverrides CustomerOverride[]
+  customerCatHidden CustomerCatHidden[]
+  carts           Cart[]
+  
+  @@map("customers")
+}
+
+model CustomerOverride {
+  id            Int      @id @default(autoincrement())
+  customerId    String   @map("customer_id") @db.VarChar(50)
+  productId     String   @map("product_id") @db.VarChar(50)
+  overridePrice Decimal? @map("override_price") @db.Decimal(10, 2)
+  isHidden      Boolean  @default(false) @map("is_hidden")
+  isOos         Boolean  @default(false) @map("is_oos")
+  
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@map("customer_overrides")
+}
+
+model CustomerCatHidden {
+  id              Int           @id @default(autoincrement())
+  customerId      String        @map("customer_id") @db.VarChar(50)
+  superCategoryId Int           @map("super_category_id")
+  
+  customer        Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  superCategory   SuperCategory @relation(fields: [superCategoryId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, superCategoryId])
+  @@index([customerId])
+  @@map("customer_cat_hidden")
+}
+
+model Order {
+  id         String    @id @db.VarChar(50)
+  customerId String    @map("customer_id") @db.VarChar(50)
+  status     String    @default("Pending") @db.VarChar(50)
+  totalCases Int       @default(0) @map("total_cases")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+  
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items      OrderItem[]
+  
+  @@index([customerId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   String   @map("order_id") @db.VarChar(50)
+  productId String   @map("product_id") @db.VarChar(50)
+  qty       Int
+  unit      String   @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+  @@map("order_items")
+}
+
+model Favorite {
+  id         Int      @id @default(autoincrement())
+  customerId String   @map("customer_id") @db.VarChar(50)
+  productId  String   @map("product_id") @db.VarChar(50)
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@map("favorites")
+}
+
+model ActivityLog {
+  id         Int      @id @default(autoincrement())
+  customerId String?  @map("customer_id") @db.VarChar(50)
+  type       String   @db.VarChar(50)
+  detail     String?  @db.Text
+  adminId    String?  @map("admin_id") @db.VarChar(50)
+  entityType String?  @map("entity_type") @db.VarChar(50)
+  entityId   String?  @map("entity_id") @db.VarChar(50)
+  ipAddress  String?  @map("ip_address") @db.VarChar(50)
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  
+  @@index([customerId])
+  @@index([type])
+  @@index([adminId])
+  @@index([createdAt(sort: Desc)])
+  @@map("activity_log")
+}
+
+model PendingRegistration {
+  id           String   @id @db.VarChar(50)
+  companyName  String   @map("company_name") @db.VarChar(255)
+  contactName  String?  @map("contact_name") @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  phone        String?  @db.VarChar(20)
+  passwordHash String   @map("password_hash") @db.VarChar(255)
+  status       String   @default("pending") @db.VarChar(50)
+  createdAt    DateTime @default(now()) @map("created_at")
+  
+  @@map("pending_registrations")
+}
+
+model Setting {
+  key       String   @id @db.VarChar(255)
+  value     String?  @db.Text
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  @@map("settings")
+}
+
+model Cart {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerId String   @map("customer_id") @db.VarChar(50)
+  productId  String   @map("product_id") @db.VarChar(50)
+  quantity   Int
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+  
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@index([createdAt(sort: Desc)])
+  @@map("carts")
+}
