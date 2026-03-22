@@ -8,8 +8,6 @@ const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
 const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-const morgan = require('morgan');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -308,17 +306,6 @@ const transporter = nodemailer.createTransport({
 // HELPER FUNCTIONS
 // ========================
 
-// Calculate total cases from order items
-async function calculateTotalCases(orderId) {
-  const result = await pool.query(`
-    SELECT SUM(CASE WHEN unit = 'cases' THEN qty ELSE qty * p.cases_per_pallet END) as total
-    FROM order_items oi
-    JOIN products p ON oi.product_id = p.id
-    WHERE oi.order_id = $1
-  `, [orderId]);
-  
-  return result.rows[0]?.total || 0;
-}
 
 // Log activity (supports both customer and admin actions)
 async function logActivity(customerId, type, detail, options = {}) {

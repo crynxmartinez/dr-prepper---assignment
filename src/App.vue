@@ -303,7 +303,7 @@
               <span class="sheet-tag">{{ selectedProduct.super }}</span>
               <span class="sheet-tag">{{ selectedProduct.cat }}</span>
             </div>
-            <div class="sheet-fav" @click="console.log('💙 DEBUG: Product sheet heart clicked'); toggleFavorite(selectedProduct)">
+            <div class="sheet-fav" @click="toggleFavorite(selectedProduct)">
               <span 
                 :class="['sheet-fav-icon', { faved: isFavorited(selectedProduct) }]"
               >
@@ -987,31 +987,17 @@ export default {
       this.cartOverlayOpen = false
     },
     async toggleFavorite(product) {
-      console.log('🔍 DEBUG: toggleFavorite called')
-      console.log('  Product:', product)
-      console.log('  Product ID:', product?.id)
-      console.log('  Product Name:', product?.name)
-      
       const token = localStorage.getItem('token')
-      console.log('  Token exists:', !!token)
       
       if (!token) {
-        console.error('❌ DEBUG: No auth token found')
         this.showToast('❌ Please login first')
         return
       }
       
       const isFav = this.isFavorited(product)
-      console.log('  Is currently favorited:', isFav)
-      console.log('  Current favorites count:', this.favorites.length)
-      console.log('  Current favorites:', this.favorites.map(f => f.id))
       
       try {
         if (isFav) {
-          // Remove from favorites
-          console.log('🗑️ DEBUG: Attempting to REMOVE from favorites')
-          console.log('  DELETE URL:', `/api/favorites/${product.id}`)
-          
           const res = await fetch(`/api/favorites/${product.id}`, {
             method: 'DELETE',
             headers: {
@@ -1020,29 +1006,16 @@ export default {
             }
           })
           
-          console.log('  Response status:', res.status)
-          console.log('  Response ok:', res.ok)
-          
           if (res.ok) {
             const idx = this.favorites.findIndex(f => f.id === product.id)
-            console.log('  Found at index:', idx)
             if (idx >= 0) {
               this.favorites.splice(idx, 1)
             }
-            console.log('✅ DEBUG: Successfully removed from favorites')
             this.showToast('💔 Removed from favorites')
           } else {
-            const error = await res.json().catch(() => ({}))
-            console.error('❌ DEBUG: Remove favorite failed')
-            console.error('  Error:', error)
             this.showToast('❌ Failed to remove favorite')
           }
         } else {
-          // Add to favorites
-          console.log('➕ DEBUG: Attempting to ADD to favorites')
-          console.log('  POST URL:', '/api/favorites')
-          console.log('  Body:', { product_id: product.id })
-          
           const res = await fetch('/api/favorites', {
             method: 'POST',
             headers: {
@@ -1052,39 +1025,23 @@ export default {
             body: JSON.stringify({ product_id: product.id })
           })
           
-          console.log('  Response status:', res.status)
-          console.log('  Response ok:', res.ok)
-          
           if (res.ok) {
             this.favorites.push(product)
-            console.log('✅ DEBUG: Successfully added to favorites')
-            console.log('  New favorites count:', this.favorites.length)
-            console.log('  Favorites array:', this.favorites)
-            console.log('  Product added:', product)
             this.showToast('❤️ Added to favorites')
           } else {
-            const error = await res.json().catch(() => ({}))
-            console.error('❌ DEBUG: Add favorite failed')
-            console.error('  Error:', error)
             this.showToast('❌ Failed to add favorite')
           }
         }
       } catch (err) {
-        console.error('❌ DEBUG: Toggle favorite error:', err)
-        console.error('  Error details:', err.message)
+        console.error('Toggle favorite error:', err)
         this.showToast('❌ Connection error')
       }
-      
-      console.log('🏁 DEBUG: toggleFavorite completed')
     },
     isFavorited(product) {
       return this.favorites.some(f => f.id === product.id)
     },
     async loadFavorites() {
       const token = localStorage.getItem('token')
-      console.log('📥 DEBUG: loadFavorites called')
-      console.log('  Token exists:', !!token)
-      
       if (!token) return
       
       try {
@@ -1096,18 +1053,12 @@ export default {
           }
         })
         
-        console.log('  Response status:', res.status)
-        console.log('  Response ok:', res.ok)
-        
         if (res.ok) {
           const data = await res.json()
-          console.log('  API Response:', data)
-          console.log('  Favorites received:', data.favorites?.length || 0)
           this.favorites = data.favorites || []
-          console.log('  Favorites array set to:', this.favorites)
         }
       } catch (err) {
-        console.error('❌ Load favorites error:', err)
+        console.error('Load favorites error:', err)
       }
     },
     addSelectedProduct() {
@@ -1116,20 +1067,12 @@ export default {
       this.productSheetOpen = false
     },
     addToCart(product, qty = 1) {
-      console.log('addToCart called with:', { product, qty })
-      console.log('Product price:', product.price)
-      console.log('Current cartItems:', this.cartItems)
-      
       const existing = this.cartItems.find(item => item.id === product.id)
       if (existing) {
         existing.qty += qty
-        console.log('Updated existing item:', existing)
       } else {
-        const newItem = { ...product, qty }
-        console.log('Adding new item:', newItem)
-        this.cartItems.push(newItem)
+        this.cartItems.push({ ...product, qty })
       }
-      console.log('Cart after add:', this.cartItems)
     },
     removeFromCart(productId) {
       this.cartItems = this.cartItems.filter(item => item.id !== productId)
