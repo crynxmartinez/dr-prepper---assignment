@@ -105,19 +105,27 @@ PORT=5000
 
 ### 3. Database Setup
 
-**Create database:**
+**⚠️ Important:** Cloning this repo only gives you the **Prisma schema** (`prisma/schema.prisma`), not the actual database or data. You must create your own PostgreSQL database.
+
+**Step 1: Create a new PostgreSQL database**
 ```bash
+# Using createdb command
 createdb drprepper_wholesale
+
+# Or using psql
+psql -U postgres
+CREATE DATABASE drprepper_wholesale;
+\q
 ```
 
-**Run Prisma migrations:**
+**Step 2: Run Prisma migrations to create tables**
 ```bash
 npx prisma migrate deploy
 ```
 
-This creates all tables:
+This reads the Prisma schema and creates all tables in your empty database:
 - `products` - Product catalog
-- `customers` - Customer accounts
+- `customers` - Customer accounts  
 - `users` - Admin users
 - `orders` & `order_items` - Order management
 - `favorites` - Customer favorites
@@ -128,22 +136,28 @@ This creates all tables:
 - `pending_registrations` - Registration approvals
 - `settings` - System settings
 
-**Generate Prisma Client:**
+**Step 3: Generate Prisma Client**
 ```bash
 npx prisma generate
 ```
 
-### 4. Seed Database (Optional)
+This generates the Prisma Client based on your schema (required for the app to run).
+
+### 4. Seed Database (Required for First Run)
+
+**⚠️ Your database is now empty!** You need to seed it with initial data:
 
 ```bash
 npm run seed
 ```
 
-This creates:
-- Demo admin user
-- Sample customers
-- Product categories
-- 205+ products with images
+This populates your database with:
+- **Demo admin user** (`admin@drprepperusa.com`)
+- **Sample customers** (3 demo accounts)
+- **Product categories** (Super categories + categories)
+- **205+ products** with images and pricing
+
+**Without seeding, you'll have an empty catalog and won't be able to log in.**
 
 ### 5. Start Development
 
