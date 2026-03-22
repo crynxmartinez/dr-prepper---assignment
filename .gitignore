@@ -4,7 +4,7 @@ package-lock.json
 yarn.lock
 
 # Environment variables
-.env
+# .env  # Commented out for assignment - .env is committed for easy setup
 .env.local
 .env.*.local
 

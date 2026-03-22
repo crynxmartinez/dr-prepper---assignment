@@ -76,17 +76,17 @@ npm install
 
 ### 2. Environment Setup
 
-```bash
-cp .env.example .env
-```
+**✅ Already configured!** The `.env` file is included in this repo with pre-configured database connection.
 
-Edit `.env` with your configuration:
+**No setup needed** - you're automatically connected to the shared Prisma database when you clone.
+
+If you need to customize settings, edit `.env`:
 
 ```env
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/drprepper_wholesale"
+# Database (already configured)
+DATABASE_URL="postgresql://..."
 
-# JWT Secret (change in production!)
+# JWT Secret
 JWT_SECRET="your-super-secret-jwt-key-change-this"
 
 # Email (for password reset)
@@ -103,63 +103,57 @@ FRONTEND_URL="http://localhost:5173"
 PORT=5000
 ```
 
+> **Note:** For production use, never commit `.env` files. This is included only for assignment/demo purposes.
+
 ### 3. Database Setup
 
-**⚠️ Important:** Cloning this repo only gives you the **Prisma schema** (`prisma/schema.prisma`), not the actual database or data. You must create your own PostgreSQL database.
+**✅ Already connected!** The `.env` file includes a pre-configured database connection. You're automatically connected to the shared Prisma database.
 
-**Step 1: Create a new PostgreSQL database**
-```bash
-# Using createdb command
-createdb drprepper_wholesale
-
-# Or using psql
-psql -U postgres
-CREATE DATABASE drprepper_wholesale;
-\q
-```
-
-**Step 2: Run Prisma migrations to create tables**
-```bash
-npx prisma migrate deploy
-```
-
-This reads the Prisma schema and creates all tables in your empty database:
-- `products` - Product catalog
-- `customers` - Customer accounts  
-- `users` - Admin users
-- `orders` & `order_items` - Order management
-- `favorites` - Customer favorites
-- `activity_log` - Audit trail
-- `customer_overrides` - Per-customer visibility
-- `customer_cat_hidden` - Category visibility
-- `carts` - Shopping cart persistence
-- `pending_registrations` - Registration approvals
-- `settings` - System settings
-
-**Step 3: Generate Prisma Client**
+**Just generate the Prisma Client:**
 ```bash
 npx prisma generate
 ```
 
-This generates the Prisma Client based on your schema (required for the app to run).
+This generates the Prisma Client based on the schema (required for the app to run).
 
-### 4. Seed Database (Required for First Run)
+**That's it!** The database already has:
+- ✅ All tables created (products, customers, orders, etc.)
+- ✅ Demo admin user (`admin@drprepperusa.com`)
+- ✅ Sample customers (3 demo accounts)
+- ✅ Product categories
+- ✅ 205+ products with images and pricing
 
-**⚠️ Your database is now empty!** You need to seed it with initial data:
+---
 
+<details>
+<summary><b>🔧 Advanced: Want to use your own local database instead?</b></summary>
+
+If you prefer to create your own PostgreSQL database:
+
+**Step 1: Create database**
+```bash
+createdb drprepper_wholesale
+```
+
+**Step 2: Update `.env`**
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/drprepper_wholesale"
+```
+
+**Step 3: Run migrations**
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
+
+**Step 4: Seed data**
 ```bash
 npm run seed
 ```
 
-This populates your database with:
-- **Demo admin user** (`admin@drprepperusa.com`)
-- **Sample customers** (3 demo accounts)
-- **Product categories** (Super categories + categories)
-- **205+ products** with images and pricing
+</details>
 
-**Without seeding, you'll have an empty catalog and won't be able to log in.**
-
-### 5. Start Development
+### 4. Start Development
 
 **Backend server:**
 ```bash
@@ -180,7 +174,7 @@ Vite dev server runs on `http://localhost:5173`
 http://localhost:5173
 ```
 
-### 6. Default Login Credentials
+### 5. Default Login Credentials
 
 **Admin User:**
 - Email: `admin@drprepperusa.com`
