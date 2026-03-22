@@ -5,19 +5,20 @@ Full B2B wholesale ordering platform with product catalog, cart, favorites, orde
 ## Project Structure
 
 ```
-wholesale-portal/
+dpu-wholesale-prepper/
 ├── server.js                 # Express API server (all 25+ endpoints)
-├── schema.sql               # PostgreSQL database schema
+├── prisma/
+│   ├── schema.prisma        # Database schema (source of truth)
+│   └── migrations/          # Prisma migrations
 ├── package.json             # Dependencies
 ├── .env.example             # Environment variables template
-├── public/                  # Static HTML files (frontend)
-│   ├── 01_login.html
-│   ├── 02_customer_portal.html
-│   └── 03_admin_portal.html
-├── scripts/
-│   ├── seed.js             # Database seeding (demo customers)
-│   └── migrate.js          # Run migrations (create tables)
-└── products.json           # Product import data (populate via seed.js)
+├── src/
+│   ├── App.vue              # Main Vue 3 application
+│   └── components/          # Vue components
+├── migrations/
+│   ├── pre-prisma/          # Historical raw SQL migrations (archived)
+│   └── README.md            # Migration system documentation
+└── sql/archive/             # Old schema and data fix scripts
 ```
 
 ## Quick Start
@@ -25,13 +26,11 @@ wholesale-portal/
 ### 1. Database Setup
 
 ```bash
-# Create PostgreSQL database
-createdb drprepper_wholesale
-
 # Copy environment template
 cp .env.example .env
 
-# Edit .env with your PostgreSQL credentials
+# Edit .env with your PostgreSQL credentials and DATABASE_URL
+# Example: DATABASE_URL="postgresql://user:password@localhost:5432/drprepper_wholesale"
 nano .env
 ```
 
@@ -41,13 +40,17 @@ nano .env
 npm install
 ```
 
-### 3. Run Migrations
+### 3. Run Prisma Migrations
+
+**Database schema is already set up with Prisma!** Just run:
 
 ```bash
-npm run migrate
+npx prisma migrate deploy
 ```
 
-This creates all tables: products, customers, orders, favorites, activity_log, settings, etc.
+This applies all Prisma migrations and creates tables: products, customers, orders, favorites, activity_log, users, settings, carts, etc.
+
+**Note:** Historical raw SQL migrations are archived in `migrations/pre-prisma/` for reference only.
 
 ### 4. Import Products
 
@@ -100,13 +103,24 @@ Runs on port 5000 by default (override with PORT env var).
 
 ## Frontend
 
-The three HTML files (01_login.html, 02_customer_portal.html, 03_admin_portal.html) are served as static files from `public/`:
+**Vue 3 Single Page Application** built with Vite:
 
-- **01_login.html** — Authentication gateway (customer + admin modes)
-- **02_customer_portal.html** — Customer catalog, cart, orders, favorites
-- **03_admin_portal.html** — Admin dashboard (products, customers, visibility, orders, settings)
+- **src/App.vue** — Main application (3,200+ lines)
+  - Customer portal: Product catalog, cart, orders, favorites
+  - Admin portal: Product management, customer management, visibility controls, order management
+  - Login/registration flows
+  
+- **src/components/** — Vue components
+  - AdminPortal.vue (5,800+ lines) — Full admin dashboard
+  - ProductCard.vue, CartOverlay.vue, CategoryList.vue, etc.
 
-These should be the prototype files from the spec document (with all 205 products embedded).
+**Development:**
+```bash
+npm run dev    # Start Vite dev server (port 5173)
+npm run build  # Build for production
+```
+
+**Production:** Built files served from `public/` by Express server.
 
 ## API Endpoints
 
@@ -229,8 +243,23 @@ customer.customOos: ["prod-id-3"]  // Products marked OOS
 
 See DEPLOYMENT.md for production setup on Mac mini with PM2.
 
+## Recent Updates (March 2026)
+
+**Code Cleanup & Organization:**
+- Removed 30+ debug console.logs from production code
+- Removed unused dependencies (axios)
+- Removed dead code (unused functions and imports)
+- Archived old schema.sql and pre-Prisma migrations to `sql/archive/` and `migrations/pre-prisma/`
+- Migrated to Prisma ORM for database management
+
+**Migration Status:**
+- ✅ Database: Prisma-managed (see `prisma/schema.prisma`)
+- 🔄 Frontend: Vue 3 (React 18 migration planned)
+- ✅ Backend: Express + Node.js
+
 ## Notes
 
-- **JWT**: Uses simple base64 encoding, not cryptographic JWT. Suitable for internal B2B use; upgrade to proper JWT/OAuth for public-facing.
-- **Images**: Currently expects `image_url` strings. Prototype has base64-encoded images; migrate to CDN on deployment.
-- **Email**: Configured for Gmail; update EMAIL_HOST, EMAIL_USER, EMAIL_PASS in .env for other providers.
+- **Authentication**: JWT-based with bcrypt password hashing
+- **Images**: Product images stored as URLs; migrate to CDN for production
+- **Email**: Configured for Gmail SMTP; update EMAIL_HOST, EMAIL_USER, EMAIL_PASS in .env for other providers
+- **Database**: PostgreSQL with Prisma ORM (all queries use raw SQL via `pool.query()` currently)
