@@ -3,10 +3,9 @@ import vue from '@vitejs/plugin-vue'
 
 export default defineConfig({
   plugins: [vue()],
-  publicDir: false, // Don't copy public folder during build (Express already serves it)
   build: {
-    outDir: 'public',
-    emptyOutDir: false, // Don't delete existing files in public/
+    outDir: 'dist',
+    emptyOutDir: true,
     rollupOptions: {
       input: './index.html'
     }

@@ -68,7 +68,9 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.static('public', { maxAge: 0 }));
+// Serve built frontend from dist/ (production) or public/ (dev)
+const staticDir = process.env.NODE_ENV === 'production' ? 'dist' : 'public';
+app.use(express.static(staticDir, { maxAge: 0 }));
 
 // Favicon route
 app.get('/favicon.ico', (req, res) => {
@@ -3269,7 +3271,10 @@ app.delete('/api/cart', async (req, res) => {
 // SPA CATCH-ALL ROUTE (must be after all API routes)
 // Serves index.html for all non-API routes so client-side routing works
 app.get('*', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
+  const indexPath = process.env.NODE_ENV === 'production' 
+    ? __dirname + '/dist/index.html'
+    : __dirname + '/public/index.html';
+  res.sendFile(indexPath);
 });
 
 // ========================

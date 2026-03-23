@@ -10,9 +10,9 @@
     "migrate": "npx prisma migrate dev",
     "prisma:generate": "npx prisma generate",
     "prisma:studio": "npx prisma studio",
-    "build": "npx prisma generate && vite build",
+    "build": "vite build",
     "preview": "vite preview",
-    "vercel-build": "npx prisma generate && vite build"
+    "vercel-build": "vite build"
   },
   "prisma": {
     "seed": "node prisma/seed.js"
