@@ -35,7 +35,8 @@ const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
 });
 
-// Legacy pg Pool (for existing queries) - uses same DATABASE_URL as Prisma
+// Legacy pg Pool (for existing raw SQL queries)
+// Uses same DATABASE_URL as Prisma - no separate DB_HOST/DB_PORT/DB_USER needed
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_URL?.includes('db.prisma.io') ? { rejectUnauthorized: false } : false
