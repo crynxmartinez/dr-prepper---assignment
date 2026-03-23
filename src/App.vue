@@ -7,8 +7,8 @@
     <!-- MAIN APP (shown when authenticated) -->
     <template v-else>
 
-    <!-- NAV -->
-    <nav class="topnav">
+    <!-- NAV (hidden in admin mode - AdminPortal has its own nav) -->
+    <nav v-if="viewMode !== 'admin'" class="topnav">
       <div class="nav-left">
         <button class="burger" id="burgerBtn" @click="toggleSidebar">
           <span></span><span></span><span></span>
