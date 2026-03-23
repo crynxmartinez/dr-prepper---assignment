@@ -139,8 +139,12 @@ app.get('/catalog/image/:filename', (req, res) => {
 // IMAGE UPLOAD SETUP (MULTER)
 // ========================
 const uploadDir = path.join(__dirname, 'public', 'uploads', 'products');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn('⚠️ Could not create upload directory (read-only filesystem):', err.message);
 }
 
 const storage = multer.diskStorage({
@@ -3280,7 +3284,13 @@ app.get('*', (req, res) => {
 // ========================
 // START SERVER
 // ========================
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🔥 DR Prepper Wholesale Portal running on port ${PORT}`);
-});
+// Export for Vercel serverless
+module.exports = app;
+
+// Only listen when running locally (not on Vercel)
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🔥 DR Prepper Wholesale Portal running on port ${PORT}`);
+  });
+}
